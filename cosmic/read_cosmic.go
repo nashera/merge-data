@@ -1,14 +1,14 @@
+package cosmic
+
 import (
-	"bufio"
-	"compress/gzip"
-	"flag"
-	"fmt"
 	"log"
-	"os"
 	"strings"
+
+	"github.com/nashera/merge-data/mygzip"
 )
 
-type CosmicVar struct {
+// CosVar a object of variant on cosmic
+type CosVar struct {
 	AccessionNumber        string // Accession Number
 	Gene                   string // Gene Name
 	GeneCDSLength          string // Gene CDS length
@@ -20,10 +20,9 @@ type CosmicVar struct {
 	GenomicMutationID      string // GENOMIC_MUTATION_ID $17
 }
 
-
 // ReadCosmic 读取cosmic tsv文件到 CosmicVar splice
-func ReadCosmic(cosmicPath string) []*CosmicVar {
-	lines, errors, err := GZLines(cosmicPath)
+func ReadCosmic(cosmicPath string) []*CosVar {
+	lines, errors, err := mygzip.GZLines(cosmicPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,7 +34,7 @@ func ReadCosmic(cosmicPath string) []*CosmicVar {
 	}(errors)
 	num := 0
 	var header []string
-	var cosmicVarList []*CosmicVar
+	var cosmicVarList []*CosVar
 	for line := range lines {
 		num++
 		if num == 1 {
@@ -49,7 +48,7 @@ func ReadCosmic(cosmicPath string) []*CosmicVar {
 				rowMap[header[i]] = v
 			}
 			cosmicVarList = append(cosmicVarList,
-				&CosmicVar{
+				&CosVar{
 					AccessionNumber:        rowMap["Accession Number"],
 					Gene:                   rowMap["Gene Name"],
 					GeneCDSLength:          rowMap["Gene CDS length"],

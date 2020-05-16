@@ -1,13 +1,10 @@
+package mygzip
+
 import (
 	"bufio"
 	"compress/gzip"
-	"flag"
-	"fmt"
-	"log"
 	"os"
-	"strings"
 )
-
 
 // GZLines iterates over lines of a file that's gzip-compressed.
 // Iterating lines of an io.Reader is one of those things that Go
