@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"log"
+	"os"
 	"sync/atomic"
 	"time"
 
@@ -9,7 +11,6 @@ import (
 
 	"github.com/nashera/merge-data/civic"
 	"github.com/nashera/merge-data/cosmic"
-	"github.com/panjf2000/ants/v2"
 )
 
 const (
@@ -37,23 +38,36 @@ func demoFunc() {
 }
 
 func init() {
-	flag.StringVar(&cosmicTsv, "cosmic", "/cgdata/zhangxi/project/cosmic/test.tsv.gz", "the path to cosmicTSV")
-	flag.StringVar(&civicTsv, "civic", "/cgdata/zhangxi/project/oncogene/variants.with_hgvs.tsv", "the path to civicTSV")
+	flag.StringVar(&cosmicTsv, "cosmic", "/cgdata/zhangxi/project/oncogene/cosmic/CosmicMutantExport.tsv.gz", "the path to cosmicTSV")
+	flag.StringVar(&civicTsv, "civic", "/cgdata/zhangxi/project/oncogene/civic/variants.with_hgvs.tsv", "the path to civicTSV")
 	flag.Parse()
 }
 
 func main() {
 	cosmicVarList := cosmic.ReadCosmic(cosmicTsv)
-	for _, variant := range cosmicVarList {
-		fmt.Println(variant)
-	}
+	// for _, variant := range cosmicVarList {
+	// 	fmt.Println(variant)
+	// }
 
 	civicVarList := civic.ReadCivic(civicTsv)
-	for _, variant := range civicVarList {
-		fmt.Println(variant)
+	fp, err := os.OpenFile("/cgdata/zhangxi/project/oncogene/merge-data/civicVsComic.txt", os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		log.Panic(err)
 	}
+	ch := make(chan *civic.VarCivicComplete)
+	// defer fp.Close()
+	// defer close(ch)
+	// defer func(ch chan civic.VarCivicComplete, err )
 
-	defer ants.Release()
+	// var varList []*civic.VarCivicComplete
+	go civic.PrintVariantList(ch, fp)
+	for _, civicVar := range civicVarList {
+		ch <- civic.SearchCivicVar(civicVar, cosmicVarList)
+	}
+	fp.Sync()
+	// civic.PrintVariantList(varList)
+
+	// defer ants.Release()
 
 	// runTimes := 1000
 
@@ -71,19 +85,19 @@ func main() {
 	// fmt.Printf("running goroutines: %d\n", ants.Running())
 	// fmt.Printf("finish all tasks.\n")
 
-	// Use the pool with a function,
-	// set 10 to the capacity of goroutine pool and 1 second for expired duration.
-	p, _ := ants.NewPoolWithFunc(10, func(i interface{}) {
-		myFunc(i)
-		wg.Done()
-	})
-	defer p.Release()
-	// Submit tasks one by one.
-	for i := 0; i < runTimes; i++ {
-		wg.Add(1)
-		_ = p.Invoke(int32(i))
-	}
-	wg.Wait()
-	fmt.Printf("running goroutines: %d\n", p.Running())
-	fmt.Printf("finish all tasks, result is %d\n", sum)
+	// // Use the pool with a function,
+	// // set 10 to the capacity of goroutine pool and 1 second for expired duration.
+	// p, _ := ants.NewPoolWithFunc(10, func(i interface{}) {
+	// 	myFunc(i)
+	// 	wg.Done()
+	// })
+	// defer p.Release()
+	// // Submit tasks one by one.
+	// for i := 0; i < runTimes; i++ {
+	// 	wg.Add(1)
+	// 	_ = p.Invoke(int32(i))
+	// }
+	// wg.Wait()
+	// fmt.Printf("running goroutines: %d\n", p.Running())
+	// fmt.Printf("finish all tasks, result is %d\n", sum)
 }
